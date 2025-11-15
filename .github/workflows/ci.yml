@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: mcp-server/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./mcp-server
+      run: npm ci
+
+    - name: Build
+      working-directory: ./mcp-server
+      run: npm run build
+
+    - name: Check build output
+      working-directory: ./mcp-server
+      run: |
+        if [ ! -f "dist/index.js" ]; then
+          echo "Build failed: dist/index.js not found"
+          exit 1
+        fi
+        echo "Build successful"
+
+    # TODO: Add tests when test suite is implemented
+    # - name: Run tests
+    #   working-directory: ./mcp-server
+    #   run: npm test
+    #   env:
+    #     REDIS_URL: redis://localhost:6379
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      working-directory: ./mcp-server
+      run: npm ci
+
+    # TODO: Add linting when ESLint is configured
+    # - name: Run linter
+    #   working-directory: ./mcp-server
+    #   run: npm run lint
+
+    - name: Check TypeScript
+      working-directory: ./mcp-server
+      run: npx tsc --noEmit
