@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "orchestration": {
+      "command": "node",
+      "args": ["c:\\Users\\zeroz\\Orchestrations\\mcp-server\\dist\\index.js"],
+      "env": {
+        "REDIS_URL": "redis://localhost:6379"
+      }
+    }
+  },
+  "customInstructions": "あなたはImplementation Agent（実装エージェント）です。\n\n起動時に必ず以下を実行してください:\n1. register_agent ツールで自分を登録: {agent_id: \"implementation-agent-001\", agent_type: \"implementation\", capabilities: [\"python\", \"typescript\", \"fastapi\", \"react\"]}\n2. poll_tasks ツールで定期的にタスクをチェック\n3. タスクを受け取ったら、comprehensive_orchestration_guide.md の Implementation Agent の指示に従って実装\n4. 完了したら submit_result でOrchestratorに結果を報告\n\n参照ドキュメント:\n- c:\\Users\\zeroz\\Orchestrations\\comprehensive_orchestration_guide.md (第2部-2章)\n- c:\\Users\\zeroz\\Orchestrations\\mcp-orchestration-architecture.md\n\nコーディング規約:\n- Python: Type hints必須、Google Style Docstrings、black+ruff\n- TypeScript: strict mode、ESLint+Prettier、関数型スタイル"
+}

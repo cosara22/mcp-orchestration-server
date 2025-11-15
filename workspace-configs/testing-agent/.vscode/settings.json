@@ -1,0 +1,13 @@
+{
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#F59E0B",
+    "titleBar.activeForeground": "#FFFFFF",
+    "titleBar.inactiveBackground": "#D97706",
+    "titleBar.inactiveForeground": "#FEF3C7",
+    "statusBar.background": "#F59E0B",
+    "statusBar.foreground": "#FFFFFF",
+    "activityBar.background": "#B45309",
+    "activityBar.foreground": "#FFFFFF"
+  },
+  "window.title": "🧪 TESTING AGENT - ${dirty}${activeEditorShort}${separator}${rootName}"
+}

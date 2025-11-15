@@ -1,0 +1,13 @@
+{
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#0EA5E9",
+    "titleBar.activeForeground": "#FFFFFF",
+    "titleBar.inactiveBackground": "#0284C7",
+    "titleBar.inactiveForeground": "#BAE6FD",
+    "statusBar.background": "#0EA5E9",
+    "statusBar.foreground": "#FFFFFF",
+    "activityBar.background": "#0369A1",
+    "activityBar.foreground": "#FFFFFF"
+  },
+  "window.title": "📋 PLANNING AGENT - ${dirty}${activeEditorShort}${separator}${rootName}"
+}

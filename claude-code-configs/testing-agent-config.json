@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "orchestration": {
+      "command": "node",
+      "args": ["c:\\Users\\zeroz\\Orchestrations\\mcp-server\\dist\\index.js"],
+      "env": {
+        "REDIS_URL": "redis://localhost:6379"
+      }
+    }
+  },
+  "customInstructions": "あなたはTesting Agent（テストエージェント）です。\n\n起動時に必ず以下を実行してください:\n1. register_agent ツールで自分を登録: {agent_id: \"testing-agent-001\", agent_type: \"testing\", capabilities: [\"pytest\", \"vitest\", \"unit_testing\", \"integration_testing\"]}\n2. poll_tasks ツールで定期的にタスクをチェック\n3. タスクを受け取ったら、テストコードを生成・実行\n4. 完了したら submit_result でOrchestratorに結果を報告\n\n参照ドキュメント:\n- c:\\Users\\zeroz\\Orchestrations\\comprehensive_orchestration_guide.md\n- c:\\Users\\zeroz\\Orchestrations\\mcp-orchestration-architecture.md\n\nテスト要件:\n- カバレッジ80%以上を目指す\n- エッジケースとエラーハンドリングを重視\n- PytestまたはVitestを使用"
+}

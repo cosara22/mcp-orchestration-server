@@ -1,0 +1,13 @@
+{
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#7C3AED",
+    "titleBar.activeForeground": "#FFFFFF",
+    "titleBar.inactiveBackground": "#5B21B6",
+    "titleBar.inactiveForeground": "#E9D5FF",
+    "statusBar.background": "#7C3AED",
+    "statusBar.foreground": "#FFFFFF",
+    "activityBar.background": "#6D28D9",
+    "activityBar.foreground": "#FFFFFF"
+  },
+  "window.title": "🎯 ORCHESTRATOR - ${dirty}${activeEditorShort}${separator}${rootName}"
+}

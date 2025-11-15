@@ -1,0 +1,13 @@
+{
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#10B981",
+    "titleBar.activeForeground": "#FFFFFF",
+    "titleBar.inactiveBackground": "#059669",
+    "titleBar.inactiveForeground": "#D1FAE5",
+    "statusBar.background": "#10B981",
+    "statusBar.foreground": "#FFFFFF",
+    "activityBar.background": "#047857",
+    "activityBar.foreground": "#FFFFFF"
+  },
+  "window.title": "⚙️ IMPLEMENTATION AGENT - ${dirty}${activeEditorShort}${separator}${rootName}"
+}
