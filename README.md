@@ -282,6 +282,10 @@ Issue や Pull Request を歓迎します!
 
 ---
 
-**開発者**: Claude Code Multi-Agent Orchestration Project
+[![CI](https://github.com/cosara22/mcp-orchestration-server/actions/workflows/ci.yml/badge.svg)](https://github.com/cosara22/mcp-orchestration-server/actions/workflows/ci.yml)
+
 **バージョン**: 1.0.0
-**更新日**: 2025-01-16
+**最終更新**: 2025-11-16
+**リポジトリ**: [cosara22/mcp-orchestration-server](https://github.com/cosara22/mcp-orchestration-server)
+
+🤖 Built with [Claude Code](https://claude.com/claude-code)
