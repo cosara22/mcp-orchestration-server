@@ -1,0 +1,4 @@
+{
+  "name": "MCP Orchestration Observer",
+  "description": "A comprehensive observability dashboard for the MCP Orchestration Server, featuring real-time metrics, log analysis, and task tracing."
+}
