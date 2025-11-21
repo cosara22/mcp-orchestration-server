@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Filter, RefreshCw, AlertTriangle, Info, AlertOctagon } from 'lucide-react';
-import { generateMockLogs } from '../services/mockService';
+import { api } from '../services/api';
 import { LogEntry, LogLevel } from '../types';
 
 const LogIcon: React.FC<{ level: LogLevel }> = ({ level }) => {
@@ -17,12 +17,11 @@ const Logs: React.FC = () => {
   const [levelFilter, setLevelFilter] = useState<string>('ALL');
   const [isLoading, setIsLoading] = useState(false);
 
-  const loadLogs = () => {
+  const loadLogs = async () => {
     setIsLoading(true);
-    setTimeout(() => {
-      setLogs(generateMockLogs(100));
-      setIsLoading(false);
-    }, 600);
+    const data = await api.getLogs(100);
+    setLogs(data);
+    setIsLoading(false);
   };
 
   useEffect(() => {

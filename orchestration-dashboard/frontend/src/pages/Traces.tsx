@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search, Clock, CheckCircle, XCircle, Box, ArrowRight, Database, DollarSign, Code, X, GitFork, Play } from 'lucide-react';
-import { generateMockTrace, replayTask } from '../services/mockService';
+import { api } fromgetTrace, replayTask } from '../services/api';
 import { TaskTrace, TaskStatus, TraceStep as ITraceStep } from '../types';
 import JsonViewer from '../components/JSONViewer';
 import Modal from '../components/Modal';
@@ -68,7 +68,7 @@ const Traces: React.FC = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchId) {
-      const newTrace = generateMockTrace(searchId);
+      const newTrace = api.getTrace(searchId);
       setTrace(newTrace);
       setSelectedStepIndex(null);
     }
@@ -76,7 +76,7 @@ const Traces: React.FC = () => {
 
   // Load a sample trace on mount
   useEffect(() => {
-    setTrace(generateMockTrace("trace-init-demo"));
+    setTrace(api.getTrace("trace-init-demo"));
   }, []);
 
   const selectedStep = trace && selectedStepIndex !== null ? trace.steps[selectedStepIndex] : null;
@@ -99,7 +99,7 @@ const Traces: React.FC = () => {
       setIsReplayModalOpen(false);
       setSearchId(newTraceId);
       // Simulate navigation to new trace
-      const newTrace = generateMockTrace(newTraceId);
+      const newTrace = api.getTrace(newTraceId);
       setTrace(newTrace);
       setSelectedStepIndex(null);
     } catch (e) {

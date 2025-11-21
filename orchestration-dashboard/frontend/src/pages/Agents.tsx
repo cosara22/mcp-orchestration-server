@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Power, RefreshCw, AlertCircle, Brain, Zap, Clock, Shield } from 'lucide-react';
 import { Agent } from '../types';
-import { generateMockAgents } from '../services/mockService';
+import { api } from '../services/api';
 
 const AgentCard: React.FC<{ agent: Agent; onAction: (id: string, action: string) => void }> = ({ agent, onAction }) => {
   const statusColor = 
@@ -84,7 +84,11 @@ const Agents: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
 
   useEffect(() => {
-    setAgents(generateMockAgents());
+    const loadAgents = async () => {
+      const data = await api.getAgents();
+      setAgents(data);
+    };
+    loadAgents();
   }, []);
 
   const handleAction = (id: string, action: string) => {

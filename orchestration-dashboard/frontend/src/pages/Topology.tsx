@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { getTopologyData } from '../services/mockService';
+import { api } fromgetTopology } from '../services/api';
 import { TopologyNode, TopologyLink } from '../types';
 import { ZoomIn, ZoomOut, RefreshCw, Maximize } from 'lucide-react';
 
@@ -11,7 +11,7 @@ const Topology: React.FC = () => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   const loadData = () => {
-    const data = getTopologyData();
+    const data = api.getTopology();
     setNodes(data.nodes);
     setLinks(data.links);
   };

@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
-import { generateTimeSeriesData, generateAgentDistribution } from '../services/mockService';
+import { generateTimeSeriesData, getAgentDistribution } from '../services/api';
 import { TimeSeriesPoint } from '../types';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'];
@@ -22,7 +22,7 @@ const Metrics: React.FC = () => {
       failed: Math.floor(pt.value * 0.05)
     }));
     setTaskHistory(history);
-    setAgentDist(generateAgentDistribution());
+    setAgentDist(api.getAgentDistribution());
     setLatencyData(generateTimeSeriesData(24, 450, 150));
     setCostData(generateTimeSeriesData(24, 50000, 10000)); // Token/Cost sim
   }, []);

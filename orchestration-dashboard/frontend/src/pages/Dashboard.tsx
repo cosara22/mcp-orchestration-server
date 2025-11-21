@@ -4,7 +4,7 @@ import {
   ArrowUpRight, ArrowDownRight 
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getLatestMetrics, generateTimeSeriesData } from '../services/mockService';
+import { api } from '../services/api';
 import { DashboardMetrics, TimeSeriesPoint } from '../types';
 
 const StatCard: React.FC<{
@@ -41,16 +41,23 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     // Initial load
-    setMetrics(getLatestMetrics());
-    setChartData(generateTimeSeriesData(20, 45, 15));
+    const loadData = async () => {
+      const [metricsData, chartDataRes] = await Promise.all([
+        api.getMetrics(),
+        api.getTimeSeriesData(20, 45, 15)
+      ]);
+      setMetrics(metricsData);
+      setChartData(chartDataRes);
+    };
+    loadData();
 
     // Polling simulation
-    const interval = setInterval(() => {
-      setMetrics(getLatestMetrics());
-      setChartData(prev => {
-        const newData = generateTimeSeriesData(1, 45, 15)[0];
-        return [...prev.slice(1), newData];
-      });
+    const interval = setInterval(async () => {
+      const metricsData = await api.getMetrics();
+      setMetrics(metricsData);
+
+      const newData = await api.getTimeSeriesData(1, 45, 15);
+      setChartData(prev => [...prev.slice(1), newData[0]]);
     }, 3000);
 
     return () => clearInterval(interval);

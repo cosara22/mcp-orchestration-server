@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Trash2, Bot, User, PlayCircle, Eraser } from 'lucide-react';
 import { Agent, ChatMessage } from '../types';
-import { generateMockAgents, sendAgentMessage } from '../services/mockService';
+import { generateMockAgents, sendAgentMessage } from '../services/api';
 
 const Playground: React.FC = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -46,7 +46,7 @@ const Playground: React.FC = () => {
     setIsTyping(true);
 
     // Simulate response
-    const responseText = await sendAgentMessage(selectedAgentId, input);
+    const responseText = await api.sendAgentMessage(selectedAgentId, input);
     
     const agentMsg: ChatMessage = {
       id: (Date.now() + 1).toString(),
