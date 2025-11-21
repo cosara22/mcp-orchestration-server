@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { api } fromgetTopology } from '../services/api';
+import { api } from '../services/api';
 import { TopologyNode, TopologyLink } from '../types';
 import { ZoomIn, ZoomOut, RefreshCw, Maximize } from 'lucide-react';
 

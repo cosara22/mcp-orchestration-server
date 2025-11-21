@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
-import { generateTimeSeriesData, getAgentDistribution } from '../services/api';
+import { api } from '../services/api';
 import { TimeSeriesPoint } from '../types';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'];

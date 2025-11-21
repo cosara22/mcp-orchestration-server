@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search, Clock, CheckCircle, XCircle, Box, ArrowRight, Database, DollarSign, Code, X, GitFork, Play } from 'lucide-react';
-import { api } fromgetTrace, replayTask } from '../services/api';
+import { api } from '../services/api';
 import { TaskTrace, TaskStatus, TraceStep as ITraceStep } from '../types';
 import JsonViewer from '../components/JSONViewer';
 import Modal from '../components/Modal';

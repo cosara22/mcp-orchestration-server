@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Trash2, Bot, User, PlayCircle, Eraser } from 'lucide-react';
 import { Agent, ChatMessage } from '../types';
-import { generateMockAgents, sendAgentMessage } from '../services/api';
+import { api } from '../services/api';
 
 const Playground: React.FC = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
