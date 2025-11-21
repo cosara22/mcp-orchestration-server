@@ -9,10 +9,22 @@ import {
 import { RedisClientType, createClient } from 'redis';
 import { z } from 'zod';
 import 'dotenv/config';
+import express from 'express';
+import { v4 as uuidv4 } from 'uuid';
+import { logger } from './logger.js';
+import {
+  register,
+  taskCreatedTotal,
+  taskCompletedTotal,
+  taskFailedTotal,
+  taskDurationSeconds,
+  activeAgents
+} from './metrics.js';
 
 // Types
 interface Task {
   task_id: string;
+  trace_id: string;
   agent_type: 'planning' | 'implementation' | 'testing' | 'documentation';
   status: 'pending' | 'in_progress' | 'completed' | 'failed';
   created_at: string;
@@ -46,9 +58,9 @@ async function initRedis() {
     url: process.env.REDIS_URL || 'redis://localhost:6379',
   });
 
-  redis.on('error', (err) => console.error('Redis Client Error', err));
+  redis.on('error', (err) => logger.error('Redis Client Error', { error: err }));
   await redis.connect();
-  console.error('Connected to Redis');
+  logger.info('Connected to Redis');
 }
 
 // Task Management Functions
@@ -61,10 +73,12 @@ async function createTask(params: {
   timeout_seconds?: number;
 }): Promise<Task> {
   const task_id = `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const trace_id = uuidv4();
   const now = new Date().toISOString();
 
   const task: Task = {
     task_id,
+    trace_id,
     agent_type: params.agent_type as Task['agent_type'],
     status: 'pending',
     created_at: now,
@@ -86,6 +100,14 @@ async function createTask(params: {
 
   // Add to task queue for the specific agent type
   await redis.lPush(`queue:${params.agent_type}`, task_id);
+
+  // Metrics & Logging
+  taskCreatedTotal.inc();
+  logger.info('Task created', {
+    task_id,
+    trace_id,
+    agent_type: params.agent_type
+  });
 
   return task;
 }
@@ -162,7 +184,12 @@ async function submitResult(params: {
       await redis.set(`task:${params.task_id}`, JSON.stringify(task));
       // Re-push to queue (Head for immediate retry)
       await redis.lPush(`queue:${task.agent_type}`, params.task_id);
-      console.error(`Task ${params.task_id} failed. Retrying (${task.retry_count}/${task.max_retries})`);
+
+      logger.warn(`Task failed. Retrying (${task.retry_count}/${task.max_retries})`, {
+        task_id: params.task_id,
+        trace_id: task.trace_id,
+        error: params.error
+      });
     } else {
       // Dead Letter
       task.status = 'failed';
@@ -172,7 +199,13 @@ async function submitResult(params: {
 
       await redis.set(`task:${params.task_id}`, JSON.stringify(task));
       await redis.lPush('queue:dead-letter', params.task_id);
-      console.error(`Task ${params.task_id} moved to Dead Letter Queue`);
+
+      taskFailedTotal.inc();
+      logger.error(`Task moved to Dead Letter Queue`, {
+        task_id: params.task_id,
+        trace_id: task.trace_id,
+        error: params.error
+      });
     }
   } else {
     // Completed
@@ -181,6 +214,18 @@ async function submitResult(params: {
     task.error = null;
     task.updated_at = new Date().toISOString();
     await redis.set(`task:${params.task_id}`, JSON.stringify(task));
+
+    taskCompletedTotal.inc();
+    logger.info('Task completed successfully', {
+      task_id: params.task_id,
+      trace_id: task.trace_id
+    });
+  }
+
+  // Record duration if started_at is present
+  if (task.started_at) {
+    const duration = (new Date().getTime() - new Date(task.started_at).getTime()) / 1000;
+    taskDurationSeconds.observe(duration);
   }
 
   // Update agent status
@@ -233,6 +278,13 @@ async function registerAgent(params: {
   };
 
   await redis.set(`agent:${params.agent_id}`, JSON.stringify(agent));
+
+  // Update active agents metric
+  const agents = await listAgents('active');
+  activeAgents.set(agents.length);
+
+  logger.info('Agent registered', { agent_id: params.agent_id, agent_type: params.agent_type });
+
   return agent;
 }
 
@@ -261,7 +313,10 @@ async function monitorTaskTimeouts() {
           const elapsedSeconds = (now.getTime() - startedAt.getTime()) / 1000;
 
           if (elapsedSeconds > task.timeout_seconds) {
-            console.error(`Task ${task.task_id} timed out after ${elapsedSeconds}s`);
+            logger.error(`Task timed out after ${elapsedSeconds}s`, {
+              task_id: task.task_id,
+              trace_id: task.trace_id
+            });
             await submitResult({
               task_id: task.task_id,
               status: 'failed',
@@ -271,7 +326,7 @@ async function monitorTaskTimeouts() {
         }
       }
     } catch (error) {
-      console.error('Error in timeout monitor:', error);
+      logger.error('Error in timeout monitor:', { error });
     }
   }, 60000); // Check every 60 seconds
 }
@@ -669,13 +724,30 @@ async function main() {
   await initRedis();
   monitorTaskTimeouts();
 
+  // Start Metrics Server
+  const app = express();
+  const metricsPort = 9090;
+
+  app.get('/metrics', async (req, res) => {
+    try {
+      res.set('Content-Type', register.contentType);
+      res.end(await register.metrics());
+    } catch (ex) {
+      res.status(500).end(ex);
+    }
+  });
+
+  app.listen(metricsPort, () => {
+    logger.info(`Metrics server listening on port ${metricsPort}`);
+  });
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  console.error('MCP Orchestration Server running on stdio');
+  logger.info('MCP Orchestration Server running on stdio');
 }
 
 main().catch((error) => {
-  console.error('Fatal error:', error);
+  logger.error('Fatal error:', { error });
   process.exit(1);
 });
