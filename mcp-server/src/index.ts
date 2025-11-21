@@ -23,6 +23,10 @@ interface Task {
   dependencies: string[];
   result: any;
   error: string | null;
+  retry_count: number;
+  max_retries: number;
+  started_at: string | null;
+  timeout_seconds: number;
 }
 
 interface Agent {
@@ -53,6 +57,8 @@ async function createTask(params: {
   task_description: string;
   context?: Record<string, any>;
   dependencies?: string[];
+  max_retries?: number;
+  timeout_seconds?: number;
 }): Promise<Task> {
   const task_id = `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const now = new Date().toISOString();
@@ -69,6 +75,10 @@ async function createTask(params: {
     dependencies: params.dependencies || [],
     result: null,
     error: null,
+    retry_count: 0,
+    max_retries: params.max_retries ?? 3,
+    started_at: null,
+    timeout_seconds: params.timeout_seconds ?? 300,
   };
 
   // Store task in Redis
@@ -109,7 +119,9 @@ async function pollTasks(
       // Update task status
       task.status = 'in_progress';
       task.assigned_agent_id = agent_id;
+      task.assigned_agent_id = agent_id;
       task.updated_at = new Date().toISOString();
+      task.started_at = new Date().toISOString();
       await redis.set(`task:${task_id}`, JSON.stringify(task));
 
       // Update agent status
@@ -136,12 +148,40 @@ async function submitResult(params: {
     throw new Error(`Task ${params.task_id} not found`);
   }
 
-  task.status = params.status;
-  task.result = params.result || null;
-  task.error = params.error || null;
-  task.updated_at = new Date().toISOString();
+  // Check for failure and retry logic
+  if (params.status === 'failed') {
+    if (task.retry_count < task.max_retries) {
+      // Retry
+      task.status = 'pending';
+      task.retry_count++;
+      task.assigned_agent_id = null;
+      task.started_at = null;
+      task.error = params.error || 'Task failed, retrying';
+      task.updated_at = new Date().toISOString();
 
-  await redis.set(`task:${params.task_id}`, JSON.stringify(task));
+      await redis.set(`task:${params.task_id}`, JSON.stringify(task));
+      // Re-push to queue (Head for immediate retry)
+      await redis.lPush(`queue:${task.agent_type}`, params.task_id);
+      console.error(`Task ${params.task_id} failed. Retrying (${task.retry_count}/${task.max_retries})`);
+    } else {
+      // Dead Letter
+      task.status = 'failed';
+      task.result = null;
+      task.error = params.error || 'Task failed after max retries';
+      task.updated_at = new Date().toISOString();
+
+      await redis.set(`task:${params.task_id}`, JSON.stringify(task));
+      await redis.lPush('queue:dead-letter', params.task_id);
+      console.error(`Task ${params.task_id} moved to Dead Letter Queue`);
+    }
+  } else {
+    // Completed
+    task.status = params.status;
+    task.result = params.result || null;
+    task.error = null;
+    task.updated_at = new Date().toISOString();
+    await redis.set(`task:${params.task_id}`, JSON.stringify(task));
+  }
 
   // Update agent status
   if (task.assigned_agent_id) {
@@ -205,6 +245,50 @@ async function setSharedState(key: string, value: any, ttl: number = 3600): Prom
   await redis.set(`shared:${key}`, JSON.stringify(value), { EX: ttl });
 }
 
+async function monitorTaskTimeouts() {
+  setInterval(async () => {
+    try {
+      const keys = await redis.keys('task:*');
+      const now = new Date();
+
+      for (const key of keys) {
+        const taskData = await redis.get(key);
+        if (!taskData) continue;
+
+        const task: Task = JSON.parse(taskData);
+        if (task.status === 'in_progress' && task.started_at) {
+          const startedAt = new Date(task.started_at);
+          const elapsedSeconds = (now.getTime() - startedAt.getTime()) / 1000;
+
+          if (elapsedSeconds > task.timeout_seconds) {
+            console.error(`Task ${task.task_id} timed out after ${elapsedSeconds}s`);
+            await submitResult({
+              task_id: task.task_id,
+              status: 'failed',
+              error: `Task timed out after ${task.timeout_seconds}s`,
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error in timeout monitor:', error);
+    }
+  }, 60000); // Check every 60 seconds
+}
+
+async function getDeadLetterTasks(): Promise<Task[]> {
+  const taskIds = await redis.lRange('queue:dead-letter', 0, -1);
+  const tasks: Task[] = [];
+
+  for (const taskId of taskIds) {
+    const task = await getTaskStatus(taskId);
+    if (task) {
+      tasks.push(task);
+    }
+  }
+  return tasks;
+}
+
 // MCP Server Setup
 const server = new Server(
   {
@@ -224,6 +308,8 @@ const CreateTaskSchema = z.object({
   task_description: z.string(),
   context: z.record(z.any()).optional(),
   dependencies: z.array(z.string()).optional(),
+  max_retries: z.number().optional(),
+  timeout_seconds: z.number().optional(),
 });
 
 const GetTaskStatusSchema = z.object({
@@ -429,6 +515,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ['key', 'value'],
         },
       },
+      {
+        name: 'get_dead_letter_tasks',
+        description: 'デッドレターキューにあるタスクを取得する',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
     ],
   };
 });
@@ -541,6 +635,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
+      case 'get_dead_letter_tasks': {
+        const tasks = await getDeadLetterTasks();
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(tasks, null, 2),
+            },
+          ],
+        };
+      }
+
       default:
         throw new Error(`Unknown tool: ${request.params.name}`);
     }
@@ -561,6 +667,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 // Main
 async function main() {
   await initRedis();
+  monitorTaskTimeouts();
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
