@@ -15,16 +15,26 @@ const Metrics: React.FC = () => {
   const [costData, setCostData] = useState<TimeSeriesPoint[]>([]);
 
   useEffect(() => {
-    // Simulate fetching historical data
-    const history = generateTimeSeriesData(24, 100, 30).map((pt, i) => ({
-      time: `${i}:00`,
-      completed: pt.value,
-      failed: Math.floor(pt.value * 0.05)
-    }));
-    setTaskHistory(history);
-    setAgentDist(api.getAgentDistribution());
-    setLatencyData(generateTimeSeriesData(24, 450, 150));
-    setCostData(generateTimeSeriesData(24, 50000, 10000)); // Token/Cost sim
+    const loadData = async () => {
+      const [historyData, distData, latencyDataRes, costDataRes] = await Promise.all([
+        api.getTimeSeriesData(24, 100, 30),
+        api.getAgentDistribution(),
+        api.getTimeSeriesData(24, 450, 150),
+        api.getTimeSeriesData(24, 50000, 10000)
+      ]);
+
+      const history = historyData.map((pt, i) => ({
+        time: `${i}:00`,
+        completed: pt.value,
+        failed: Math.floor(pt.value * 0.05)
+      }));
+
+      setTaskHistory(history);
+      setAgentDist(distData);
+      setLatencyData(latencyDataRes);
+      setCostData(costDataRes);
+    };
+    loadData();
   }, []);
 
   return (

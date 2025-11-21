@@ -13,11 +13,14 @@ const Playground: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const mockAgents = generateMockAgents();
-    setAgents(mockAgents);
-    if (mockAgents.length > 0) {
-      setSelectedAgentId(mockAgents[0].id);
-    }
+    const loadAgents = async () => {
+      const mockAgents = await api.getAgents();
+      setAgents(mockAgents);
+      if (mockAgents.length > 0) {
+        setSelectedAgentId(mockAgents[0].id);
+      }
+    };
+    loadAgents();
     // Initial welcome message
     setMessages([{
       id: 'init',

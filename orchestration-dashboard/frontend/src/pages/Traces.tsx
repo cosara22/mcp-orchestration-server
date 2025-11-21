@@ -65,10 +65,10 @@ const Traces: React.FC = () => {
   const [replayPayload, setReplayPayload] = useState('');
   const [isReplaying, setIsReplaying] = useState(false);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (searchId) {
-      const newTrace = api.getTrace(searchId);
+      const newTrace = await api.getTrace(searchId);
       setTrace(newTrace);
       setSelectedStepIndex(null);
     }
@@ -76,7 +76,11 @@ const Traces: React.FC = () => {
 
   // Load a sample trace on mount
   useEffect(() => {
-    setTrace(api.getTrace("trace-init-demo"));
+    const loadTrace = async () => {
+      const trace = await api.getTrace("trace-init-demo");
+      setTrace(trace);
+    };
+    loadTrace();
   }, []);
 
   const selectedStep = trace && selectedStepIndex !== null ? trace.steps[selectedStepIndex] : null;
@@ -94,7 +98,8 @@ const Traces: React.FC = () => {
     setIsReplaying(true);
     try {
       const jsonPayload = JSON.parse(replayPayload);
-      const newTraceId = await replayTask(trace?.taskId || 'unknown', jsonPayload);
+      const result = await api.replayTask(trace?.taskId || 'unknown', jsonPayload);
+      const newTraceId = result.traceId;
       
       setIsReplayModalOpen(false);
       setSearchId(newTraceId);

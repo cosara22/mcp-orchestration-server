@@ -10,8 +10,8 @@ const Topology: React.FC = () => {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const loadData = () => {
-    const data = api.getTopology();
+  const loadData = async () => {
+    const data = await api.getTopology();
     setNodes(data.nodes);
     setLinks(data.links);
   };
